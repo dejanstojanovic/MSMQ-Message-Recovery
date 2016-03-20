@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Msmq.MessageRecovery
 {
@@ -10,12 +11,33 @@ namespace Msmq.MessageRecovery
     public class MessageManager<T> where T : RecoverableMessage
     {
         #region Events
+
         public delegate void MessageEventHandler(T message);
         public delegate void MessageExceptionEventHandler(T message, Exception ex);
 
+        /// <summary>
+        /// Messsage processing failed and set for recovery
+        /// </summary>
         public event MessageExceptionEventHandler ProcessingMessageFailed;
+
+        /// <summary>
+        /// Message processing faile with no recovery option
+        /// </summary>
+        public event MessageExceptionEventHandler ProcessingMessageFailedUnrecoverable;
+
+        /// <summary>
+        /// Message from processing queue processed
+        /// </summary>
         public event MessageEventHandler ProcessingMessageSucceeded;
+
+        /// <summary>
+        /// Message took from recovery to processing queue
+        /// </summary>
         public event MessageEventHandler ReprocessMessage;
+
+        /// <summary>
+        /// Maximum recovery count reached
+        /// </summary>
         public event MessageEventHandler MaxReprocessCountReached;
         #endregion
 
@@ -24,8 +46,20 @@ namespace Msmq.MessageRecovery
         RecoveryManager<T> recoveryManager;
         ProcessingManager<T> processingManager;
         int MaxRetryCount;
+
+
         #endregion
 
+        #region Properties
+
+        public List<Type> RecoverableExceptions
+        {
+            get; set;
+        }
+
+        #endregion
+
+        #region Constructors
         public MessageManager(String receivingQueuePath, String recoveryQueuePath, IMessageProcessor messageProcessor) :
             this(receivingQueuePath, recoveryQueuePath, messageProcessor, TimeSpan.FromMinutes(1), 3)
         {
@@ -49,18 +83,26 @@ namespace Msmq.MessageRecovery
             recoveryManager.ReprocessMessage += RecoveryManager_ReprocessMessage;
         }
 
+        #endregion
+
+        #region Methods
+
         public void Add(T message)
         {
             this.processingManager.AddMessage(message);
         }
 
+        #endregion
+
+
+
         private void RecoveryManager_ReprocessMessage(T message)
         {
-            processingManager.AddMessage(message);
             if (this.ReprocessMessage != null)
             {
                 this.ReprocessMessage(message);
             }
+            processingManager.AddMessage(message);
         }
 
         private void ProcessingManager_MessageProcessed(T message)
@@ -73,21 +115,31 @@ namespace Msmq.MessageRecovery
 
         private void ProcessingManager_MessageProcessingFailed(T message, Exception ex)
         {
-
-            if (message.RetryCount < MaxRetryCount)
+            if (this.RecoverableExceptions != null &&
+                this.RecoverableExceptions.Any() &&
+                !this.RecoverableExceptions.Contains(ex.GetType())) //Check if exception type is recoverable
             {
-                recoveryManager.AddMessage(message);
-                if (this.ProcessingMessageFailed != null)
+                if (this.ProcessingMessageFailedUnrecoverable != null)
                 {
-                    this.ProcessingMessageFailed(message, ex);
+                    this.ProcessingMessageFailedUnrecoverable(message, ex);
                 }
             }
-            else
-            {
-                //Max retry count excided
-                if (this.MaxReprocessCountReached != null)
+            else {
+                if (message.RetryCount < MaxRetryCount)
                 {
-                    this.MaxReprocessCountReached(message);
+                    if (this.ProcessingMessageFailed != null)
+                    {
+                        this.ProcessingMessageFailed(message, ex);
+                    }
+                    recoveryManager.AddMessage(message);
+                }
+                else
+                {
+                    //Max retry count excided
+                    if (this.MaxReprocessCountReached != null)
+                    {
+                        this.MaxReprocessCountReached(message);
+                    }
                 }
             }
         }

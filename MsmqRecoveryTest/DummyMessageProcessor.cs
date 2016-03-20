@@ -10,7 +10,7 @@ namespace MsmqRecoveryTest
     {
         public Exception GetProcessingException()
         {
-            return new Exception("Some dummy exception");
+            return new ArgumentOutOfRangeException("Some dummy exception");
         }
 
         public bool ProcessMessage(RecoverableMessage message)
