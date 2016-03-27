@@ -5,9 +5,9 @@ using System.Text;
 
 namespace Msmq.MessageRecovery
 {
-    public interface IMessageProcessor
+    public interface IMessageProcessor<T> where T : RecoverableMessage
     {
-        bool ProcessMessage(RecoverableMessage message);
+        bool ProcessMessage(T message);
         Exception GetProcessingException();
     }
 }

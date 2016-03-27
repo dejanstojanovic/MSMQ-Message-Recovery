@@ -60,12 +60,12 @@ namespace Msmq.MessageRecovery
         #endregion
 
         #region Constructors
-        public MessageManager(String receivingQueuePath, String recoveryQueuePath, IMessageProcessor messageProcessor) :
+        public MessageManager(String receivingQueuePath, String recoveryQueuePath, IMessageProcessor<T> messageProcessor) :
             this(receivingQueuePath, recoveryQueuePath, messageProcessor, TimeSpan.FromMinutes(1), 3)
         {
 
         }
-        public MessageManager(String receivingQueuePath, String recoveryQueuePath, IMessageProcessor messageProcessor, TimeSpan recoveryDelay, int maxRetryCount, int numberOfReadingTasks = 1)
+        public MessageManager(String receivingQueuePath, String recoveryQueuePath, IMessageProcessor<T> messageProcessor, TimeSpan recoveryDelay, int maxRetryCount, int numberOfReadingTasks = 1)
         {
             if (messageProcessor == null)
                 throw new ArgumentNullException("messageProcessor", "messageProcessor cannot be null");

@@ -41,10 +41,10 @@ namespace Msmq.MessageRecovery.QueueManagers
         private MessageQueue processingQueue;
         CancellationTokenSource cancelTokenSource;
         CancellationToken cancelToken;
-        private IMessageProcessor messageProcessor;
+        private IMessageProcessor<T> messageProcessor;
 
 
-        public ProcessingManager(string messageQueuePath, IMessageProcessor messageProcessor, int numberOfReadingTasks = 1)
+        public ProcessingManager(string messageQueuePath, IMessageProcessor<T> messageProcessor, int numberOfReadingTasks = 1)
         {
             if (numberOfReadingTasks < 1)
                 throw new ArgumentOutOfRangeException("numberOfReadingTasks", "You need to have at least one task for reding from the processing queue");
