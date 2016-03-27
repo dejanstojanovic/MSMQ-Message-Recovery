@@ -6,16 +6,17 @@ using System.Text;
 
 namespace MsmqRecoveryTest
 {
-    public class DummyMessageProcessor : IMessageProcessor
+    public class DummyMessageProcessor : IMessageProcessor<DummyMessageModel>
     {
         public Exception GetProcessingException()
         {
             return new ArgumentOutOfRangeException("Some dummy exception");
         }
 
-        public bool ProcessMessage(RecoverableMessage message)
+        public bool ProcessMessage(DummyMessageModel message)
         {
-            return false;
+            throw new NotImplementedException();
         }
+
     }
 }
