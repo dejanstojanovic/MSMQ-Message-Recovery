@@ -8,7 +8,7 @@ using System.Threading;
 namespace Msmq.MessageRecovery
 {
 
-    public class MessageManager<T> where T : RecoverableMessage
+    public class MessageManager<T> : IDisposable where T : RecoverableMessage
     {
         #region Events
 
@@ -46,7 +46,7 @@ namespace Msmq.MessageRecovery
         RecoveryManager<T> recoveryManager;
         ProcessingManager<T> processingManager;
         int MaxRetryCount;
-
+        private bool disposing = false;
 
         #endregion
 
@@ -143,5 +143,17 @@ namespace Msmq.MessageRecovery
                 }
             }
         }
+
+        public void Dispose()
+        {
+            if (!disposing)
+            {
+                disposing = true;
+                this.processingManager.Dispose();
+                this.recoveryManager.Dispose();
+            }
+        }
+
+
     }
 }
